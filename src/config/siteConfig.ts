@@ -258,7 +258,15 @@ export const defaultConfig: SiteConfig = {
         "角色扮演"
       ],
       "launchUrl": "https://gigige1999.github.io/mid-castle/",
-      "gallery": [],
+      "gallery": [
+        "/personal-profile/assets/extracted/image-70be365e6f17.png",
+        "/personal-profile/assets/extracted/image-1213a744a56c.png",
+        "/personal-profile/assets/extracted/image-c16e74e88f78.png",
+        "/personal-profile/assets/extracted/image-4c92035bde8d.png",
+        "/personal-profile/assets/extracted/image-642c106c3144.png",
+        "/personal-profile/assets/extracted/image-77b91242777e.png",
+        "/personal-profile/assets/extracted/image-899034533b24.png"
+      ],
       "gameplay": {
         "cn": "从领主、守卫、司铎、厨师、铁匠、缮写员、草药师等 9 种身份中选择一位，在自己的房间醒来。点击地面或用 WASD 在城堡中行走，拾取散落的物品放进行囊，与庭院里的 9 位居民交谈、赠礼，完成每个角色的「今日小事」，收集纪念章与成就。也可以拖动旋转整座城堡，剖开任意房间查看结构与说明。",
         "en": "Choose one of 9 roles, from lord and guard to priest, cook, blacksmith, scribe and herbalist, and wake up in your own chamber. Click or use WASD to walk the castle, gather items into your satchel, chat with and give gifts to 9 residents in the courtyard, finish each role's daily tasks, and earn medals and achievements. You can also rotate the whole castle and cut open any room to explore its structure."
