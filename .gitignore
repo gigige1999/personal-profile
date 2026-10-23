@@ -7,4 +7,4 @@ coverage/
 *.log
 .env*
 !.env.example
-public/assets/extracted/
+public/assets/extracted/.DS_Store

@@ -37,6 +37,16 @@ function configPersistPlugin() {
 
             fs.writeFileSync(configFilePath, newContent, 'utf-8');
 
+            // 写回后再跑一遍资源提取，避免 base64 内联导致文件过大（GitHub 单文件上限 100MB）
+            try {
+              execSync('node --max-old-space-size=8192 scripts/extract-assets.mjs', {
+                cwd: path.resolve(__dirname),
+                stdio: 'ignore'
+              });
+            } catch (e) {
+              console.warn('[Config] 资源提取失败:', e);
+            }
+
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ success: true }));
           } catch (err: any) {
