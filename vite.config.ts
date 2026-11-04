@@ -32,9 +32,12 @@ function defaultConfigSeedPlugin() {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  // 独立域名整站部署时设置 VITE_BASE=/，资源从根路径加载；
+  // 未设置时保持 GitHub Pages 的 /personal-profile/ 子路径。
+  const base =
+    process.env.VITE_BASE || env.VITE_BASE || (mode === 'production' ? '/personal-profile/' : '/');
   return {
-    // GitHub Pages 部署：使用仓库名作为 base 路径
-    base: mode === 'production' ? '/personal-profile/' : '/',
+    base,
     plugins: [react(), tailwindcss(), configApiPlugin(), defaultConfigSeedPlugin()],
     build: {
       rollupOptions: {

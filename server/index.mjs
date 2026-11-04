@@ -11,6 +11,7 @@
 import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { handleConfigApi, readStoredConfig, writeStoredConfig } from './config-store.mjs';
 
@@ -43,10 +44,18 @@ app.all('/api/site-config', (req, res) => {
   void handleConfigApi(req, res);
 });
 
+// dist 未随代码分发时（例如平台直接执行 npm start）自动构建一次
 if (!fs.existsSync(path.join(DIST, 'index.html'))) {
-  console.warn('[server] 未找到 dist/index.html，请先执行 npm run build');
+  console.warn('[server] 未找到 dist/index.html，正在自动构建…');
+  try {
+    execSync('npm run build', { cwd: ROOT, stdio: 'inherit', env: { ...process.env, VITE_BASE: process.env.VITE_BASE || '/' } });
+  } catch (error) {
+    console.error('[server] 自动构建失败:', error?.message || error);
+  }
 }
 
+// 配置里的图片路径带 GitHub Pages 子路径前缀，独立域名部署时同样要能访问
+app.use('/personal-profile', express.static(DIST, { index: false, etag: true, maxAge: 0 }));
 app.use(express.static(DIST, { index: false, etag: true, maxAge: 0 }));
 
 app.use((req, res) => {
