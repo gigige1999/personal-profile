@@ -163,41 +163,6 @@ export const defaultConfig: SiteConfig = {
   },
   "projects": [
     {
-      "id": "1",
-      "title": {
-        "cn": "交互书-世界名著可视化书架",
-        "en": "Aetheria Puzzle"
-      },
-      "category": "interactive-book",
-      "description": {
-        "cn": "一本可以随时翻阅的交互书",
-        "en": "A minimalist spatial reasoning game set in a dreamlike void."
-      },
-      "longDescription": {
-        "cn": "一本可以随时翻阅的交互书。用指尖代替翻页，用好奇心驱动叙事。每一处细节都可以交互，每一次触碰都通往新的可能。",
-        "en": "An interactive book you can open anytime. Let your fingertips turn the pages, let curiosity drive the narrative. Every detail is interactive, every touch leads to new possibilities."
-      },
-      "coverImage": "/personal-profile/assets/extracted/image-e7f54c098f09.png",
-      "coverType": "image",
-      "videoPlayMode": "delay5s",
-      "tags": [
-        "交互书，互动，外国名著"
-      ],
-      "launchUrl": "",
-      "gallery": [
-        "/personal-profile/assets/extracted/image-65bc515625d4.png",
-        "/personal-profile/assets/extracted/image-deb63f1af5f4.png",
-        "/personal-profile/assets/extracted/image-e3a2bed82c75.png",
-        "/personal-profile/assets/extracted/image-d57828e4c5af.png",
-        "/personal-profile/assets/extracted/image-8c318a2c6e15.png"
-      ],
-      "gameplay": {
-        "cn": "",
-        "en": ""
-      },
-      "demoVideo": "/personal-profile/assets/extracted/video-0d1bdbd7e7e0.mov"
-    },
-    {
       "id": "3",
       "title": {
         "cn": "百年孤独-马孔多的记忆",
@@ -232,6 +197,41 @@ export const defaultConfig: SiteConfig = {
         "en": ""
       },
       "demoVideo": "/personal-profile/assets/extracted/video-98492c99c314.mov"
+    },
+    {
+      "id": "1",
+      "title": {
+        "cn": "交互书-世界名著可视化书架",
+        "en": "Aetheria Puzzle"
+      },
+      "category": "interactive-book",
+      "description": {
+        "cn": "一本可以随时翻阅的交互书",
+        "en": "A minimalist spatial reasoning game set in a dreamlike void."
+      },
+      "longDescription": {
+        "cn": "一本可以随时翻阅的交互书。用指尖代替翻页，用好奇心驱动叙事。每一处细节都可以交互，每一次触碰都通往新的可能。",
+        "en": "An interactive book you can open anytime. Let your fingertips turn the pages, let curiosity drive the narrative. Every detail is interactive, every touch leads to new possibilities."
+      },
+      "coverImage": "/personal-profile/assets/extracted/image-e7f54c098f09.png",
+      "coverType": "image",
+      "videoPlayMode": "delay5s",
+      "tags": [
+        "交互书，互动，外国名著"
+      ],
+      "launchUrl": "",
+      "gallery": [
+        "/personal-profile/assets/extracted/image-65bc515625d4.png",
+        "/personal-profile/assets/extracted/image-deb63f1af5f4.png",
+        "/personal-profile/assets/extracted/image-e3a2bed82c75.png",
+        "/personal-profile/assets/extracted/image-d57828e4c5af.png",
+        "/personal-profile/assets/extracted/image-8c318a2c6e15.png"
+      ],
+      "gameplay": {
+        "cn": "",
+        "en": ""
+      },
+      "demoVideo": "/personal-profile/assets/extracted/video-0d1bdbd7e7e0.mov"
     },
     {
       "id": "1792740206731",

@@ -9,6 +9,7 @@
     "build": "vite build",
     "start": "node server/index.mjs",
     "serve": "npm run build && node server/index.mjs",
+    "sync:config": "node scripts/sync-config.mjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
