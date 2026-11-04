@@ -39,11 +39,17 @@ export async function publishConfig(config: SiteConfig, adminKey: string): Promi
       },
       body: JSON.stringify({ config }),
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.success === false) {
-      return { success: false, error: data.error || `发布失败 (HTTP ${res.status})` };
+    const data = await res.json().catch(() => null);
+    if (res.ok && data?.success === true) {
+      return { success: true, message: '已发布，线上页面刷新后生效' };
     }
-    return { success: true, message: '已发布，线上页面刷新后生效' };
+    if (!data) {
+      return {
+        success: false,
+        error: '未检测到线上配置服务，请先部署配置服务（或设置 VITE_CONFIG_API 后重新构建）',
+      };
+    }
+    return { success: false, error: data.error || `发布失败 (HTTP ${res.status})` };
   } catch (error) {
     return { success: false, error: String((error as Error)?.message || error) };
   }
