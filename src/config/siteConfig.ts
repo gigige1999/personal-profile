@@ -1,4 +1,5 @@
-// 站点配置数据结构与 localStorage 持久化
+// 站点配置数据结构与本地缓存
+// 线上生效的配置由 /api/site-config 提供，见 ./remoteConfig.ts
 
 export interface SiteSettings {
   logo: string;        // logo URL
@@ -613,44 +614,15 @@ export function saveConfig(config: SiteConfig): void {
     console.warn('Failed to save config:', e);
   }
 
-  // 开发环境下同时写回源码文件，确保配置持久化
-  if (import.meta.env.DEV) {
-    fetch('/api/save-config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config),
-    }).then(res => res.json()).then(data => {
-      if (data.success) {
-        console.log('[Config] 已同步写入 siteConfig.ts 源文件');
-        // 自动推送到 GitHub 触发部署
-        return deployToGitHub();
-      } else {
-        console.warn('[Config] 写入源文件失败:', data.error);
-      }
-    }).catch(err => {
-      console.warn('[Config] 写入源文件请求失败:', err);
-    });
+  // 通知同标签页内的展示端刷新（线上生效由 publishConfig 负责）
+  try {
+    window.dispatchEvent(new CustomEvent('config-updated'));
+  } catch (e) {
+    console.warn('Failed to notify config update:', e);
   }
 }
 
-// 自动推送到 GitHub 触发 Pages 部署
-export function deployToGitHub(): Promise<{success: boolean; message?: string; error?: string}> {
-  return fetch('/api/deploy', {
-    method: 'POST',
-  }).then(res => res.json()).then(data => {
-    if (data.success) {
-      console.log('[Deploy] ' + data.message);
-    } else {
-      console.warn('[Deploy] 部署失败:', data.error);
-    }
-    return data;
-  }).catch(err => {
-    console.warn('[Deploy] 部署请求失败:', err);
-    return { success: false, error: err.toString() };
-  });
-}
-
-function deepMerge(target: any, source: any): any {
+export function deepMerge(target: any, source: any): any {
   const result = { ...target };
   for (const key of Object.keys(source)) {
     if (

@@ -35,6 +35,9 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # 配置服务独立部署时，在仓库 Settings -> Variables 中设置该值
+          VITE_CONFIG_API: ${{ vars.VITE_CONFIG_API }}
 
       - name: Add .nojekyll
         run: touch ./dist/.nojekyll

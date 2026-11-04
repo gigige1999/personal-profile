@@ -2,93 +2,48 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+import { handleConfigApi } from './server/config-store.mjs';
+import { defaultConfig } from './src/config/siteConfig';
 
-import { execSync } from 'child_process';
-
-// Vite 插件：提供 API 端点将配置写回 siteConfig.ts 文件并自动部署
-function configPersistPlugin() {
+// 开发服务器挂载与线上完全相同的配置 API，保证本地调试和线上行为一致
+function configApiPlugin() {
   return {
-    name: 'config-persist',
+    name: 'site-config-api',
     configureServer(server: any) {
-      // API: 保存配置到源文件
-      server.middlewares.use('/api/save-config', async (req: any, res: any) => {
-        if (req.method !== 'POST') {
-          res.statusCode = 405;
-          res.end('Method Not Allowed');
-          return;
-        }
-
-        let body = '';
-        req.on('data', (chunk: string) => { body += chunk; });
-        req.on('end', () => {
-          try {
-            const config = JSON.parse(body);
-            const configFilePath = path.resolve(__dirname, 'src/config/siteConfig.ts');
-            const fileContent = fs.readFileSync(configFilePath, 'utf-8');
-
-            // 生成格式化的 JSON，然后转为 TS 对象风格
-            const configJson = JSON.stringify(config, null, 2);
-
-            const newContent = fileContent.replace(
-              /export const defaultConfig: SiteConfig = \{[\s\S]*?\n\};/,
-              `export const defaultConfig: SiteConfig = ${configJson};`
-            );
-
-            fs.writeFileSync(configFilePath, newContent, 'utf-8');
-
-            // 写回后再跑一遍资源提取，避免 base64 内联导致文件过大（GitHub 单文件上限 100MB）
-            try {
-              execSync('node --max-old-space-size=8192 scripts/extract-assets.mjs', {
-                cwd: path.resolve(__dirname),
-                stdio: 'ignore'
-              });
-            } catch (e) {
-              console.warn('[Config] 资源提取失败:', e);
-            }
-
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: true }));
-          } catch (err: any) {
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: false, error: err.message }));
-          }
-        });
-      });
-
-      // API: 发布到 GitHub Pages（git commit + push 触发自动部署）
-      server.middlewares.use('/api/deploy', async (req: any, res: any) => {
-        if (req.method !== 'POST') {
-          res.statusCode = 405;
-          res.end('Method Not Allowed');
-          return;
-        }
-
-        try {
-          const cwd = path.resolve(__dirname);
-          execSync('git add -A', { cwd });
-          execSync('git commit -m "update: 管理端配置更新" --allow-empty', { cwd });
-          execSync('git push origin main', { cwd });
-
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ success: true, message: '已推送到 GitHub，自动部署中...' }));
-        } catch (err: any) {
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ success: false, error: err.message || err.toString() }));
-        }
+      server.middlewares.use('/api/site-config', (req: any, res: any) => {
+        void handleConfigApi(req, res);
       });
     },
   };
 }
 
-export default defineConfig(({mode}) => {
+// 构建时导出一份默认配置，供配置服务首次启动时作为初始数据
+function defaultConfigSeedPlugin() {
+  return {
+    name: 'default-config-seed',
+    closeBundle() {
+      const out = path.resolve(__dirname, 'dist/site-config.default.json');
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      fs.writeFileSync(out, JSON.stringify(defaultConfig), 'utf-8');
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     // GitHub Pages 部署：使用仓库名作为 base 路径
     base: mode === 'production' ? '/personal-profile/' : '/',
-    plugins: [react(), tailwindcss(), configPersistPlugin()],
+    plugins: [react(), tailwindcss(), configApiPlugin(), defaultConfigSeedPlugin()],
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+          admin: path.resolve(__dirname, 'admin.html'),
+        },
+      },
+    },
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },

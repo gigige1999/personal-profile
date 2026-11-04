@@ -5,6 +5,7 @@ import {
   Sparkles, Loader2, Check, Key, Wrench, Images, GripVertical, Lock, LogOut, Download, FolderInput
 } from 'lucide-react';
 import { SiteConfig, ProjectItem, ToolItem, TarotCard, loadConfig, saveConfig, defaultConfig } from '../config/siteConfig';
+import { fetchRemoteConfig, publishConfig } from '../config/remoteConfig';
 
 type Tab = 'site' | 'profile' | 'projects' | 'tarot' | 'contact' | 'ai';
 
@@ -184,7 +185,8 @@ const XiaohongshuIcon = () => (
 export default function AdminPanel() {
   const [config, setConfig] = useState<SiteConfig>(defaultConfig);
   const [activeTab, setActiveTab] = useState<Tab>('site');
-  const [saved, setSaved] = useState(false);
+  const [publishState, setPublishState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [publishMessage, setPublishMessage] = useState('');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
   // 塔罗牌展开状态（必须在条件返回前声明）
@@ -197,16 +199,48 @@ export default function AdminPanel() {
   });
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [adminKey, setAdminKey] = useState('');
 
   useEffect(() => {
-    setConfig(loadConfig(true));
+    const local = loadConfig(true);
+    setConfig(local);
+
+    // 优先读取线上已发布的配置，避免另一台设备打开管理端时用旧配置覆盖线上数据。
+    // 服务端返回的配置不含管理密码，这里保留本地的密码用于登录与发布鉴权。
+    void fetchRemoteConfig().then((remote) => {
+      if (!remote) return;
+      setConfig({
+        ...remote,
+        site: {
+          ...remote.site,
+          adminPassword: local.site.adminPassword || defaultConfig.site.adminPassword,
+        },
+      });
+    });
   }, []);
 
+  // 保存到本地缓存并发布到线上，前端页面刷新后即可看到新配置
+  const publish = useCallback(async (next: SiteConfig) => {
+    saveConfig(next);
+    setPublishState('saving');
+    setPublishMessage('正在发布到线上…');
+    const result = await publishConfig(next, adminKey || next.site.adminPassword || 'admin123');
+    if (result.success) {
+      setPublishState('success');
+      setPublishMessage(result.message || '已发布');
+      setTimeout(() => {
+        setPublishState('idle');
+        setPublishMessage('');
+      }, 5000);
+    } else {
+      setPublishState('error');
+      setPublishMessage(result.error || '发布失败');
+    }
+  }, [adminKey]);
+
   const handleSave = useCallback(() => {
-    saveConfig(config);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }, [config]);
+    void publish(config);
+  }, [config, publish]);
 
   // 导出配置为 JSON 文件
   const handleExport = useCallback(() => {
@@ -229,22 +263,21 @@ export default function AdminPanel() {
       try {
         const imported = JSON.parse(reader.result as string);
         setConfig(imported);
-        saveConfig(imported);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        void publish(imported);
       } catch {
         alert('配置文件格式错误，请检查 JSON 格式');
       }
     };
     reader.readAsText(file);
     if (importRef.current) importRef.current.value = '';
-  }, []);
+  }, [publish]);
 
   const handleLogin = () => {
     const cfg = loadConfig(true);
     const correctPassword = cfg.site.adminPassword || 'admin123';
     if (passwordInput === correctPassword) {
       setIsAuthenticated(true);
+      setAdminKey(passwordInput);
       sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
       setLoginError('');
     } else {
@@ -305,7 +338,7 @@ export default function AdminPanel() {
             </div>
 
             <div className="mt-6 pt-4 border-t border-[#1a1a1a]/10">
-              <a href="/" className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#1a1a1a]/40 hover:text-[#1a1a1a] transition-colors">
+              <a href={import.meta.env.BASE_URL} className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#1a1a1a]/40 hover:text-[#1a1a1a] transition-colors">
                 <ArrowLeft className="w-3 h-3" /> 返回首页
               </a>
             </div>
@@ -476,7 +509,7 @@ export default function AdminPanel() {
       <header className="sticky top-0 z-50 bg-[#1a1a1a] text-[#f4f1ea] border-b-2 border-[#9b3021]">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="/" className="flex items-center gap-2 text-[#f4f1ea]/60 hover:text-[#f4f1ea] transition-colors text-xs font-mono uppercase tracking-widest">
+            <a href={import.meta.env.BASE_URL} className="flex items-center gap-2 text-[#f4f1ea]/60 hover:text-[#f4f1ea] transition-colors text-xs font-mono uppercase tracking-widest">
               <ArrowLeft className="w-3 h-3" /> 返回前台
             </a>
             <div className="w-px h-5 bg-[#f4f1ea]/20" />
@@ -487,7 +520,7 @@ export default function AdminPanel() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/" target="_blank" className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-[#f4f1ea]/50 hover:text-[#f4f1ea] transition-colors">
+            <a href={import.meta.env.BASE_URL} target="_blank" className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-[#f4f1ea]/50 hover:text-[#f4f1ea] transition-colors">
               <Eye className="w-3 h-3" /> 预览
             </a>
             <button
@@ -513,18 +546,37 @@ export default function AdminPanel() {
             </button>
             <button
               onClick={handleSave}
-              className={`flex items-center gap-2 px-5 py-2 text-xs font-mono uppercase tracking-widest transition-all border-2 ${
-                saved
+              disabled={publishState === 'saving'}
+              className={`flex items-center gap-2 px-5 py-2 text-xs font-mono uppercase tracking-widest transition-all border-2 disabled:opacity-60 ${
+                publishState === 'success'
                   ? 'bg-green-700 border-green-700 text-white'
-                  : 'bg-[#9b3021] border-[#9b3021] text-white hover:bg-[#7a2419]'
+                  : publishState === 'error'
+                    ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
+                    : 'bg-[#9b3021] border-[#9b3021] text-white hover:bg-[#7a2419]'
               }`}
             >
               <Save className="w-3 h-3" />
-              {saved ? '已保存 ✓' : '保存配置'}
+              {publishState === 'saving'
+                ? '发布中…'
+                : publishState === 'success'
+                  ? '已发布 ✓'
+                  : publishState === 'error'
+                    ? '发布失败，重试'
+                    : '保存并发布'}
             </button>
           </div>
         </div>
       </header>
+
+      {publishMessage && (
+        <div className={`px-6 py-2 text-xs font-mono ${
+          publishState === 'error'
+            ? 'bg-[#9b3021]/10 text-[#9b3021] border-b border-[#9b3021]/20'
+            : 'bg-green-700/10 text-green-800 border-b border-green-700/20'
+        }`}>
+          {publishMessage}
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto flex min-h-[calc(100vh-52px)]">
         {/* 侧边栏 */}

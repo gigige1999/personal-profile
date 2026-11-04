@@ -14,6 +14,7 @@ import {
   Images
 } from 'lucide-react';
 import { loadConfig, SiteConfig, ProjectItem, ToolItem, TarotCard } from './config/siteConfig';
+import { fetchRemoteConfig } from './config/remoteConfig';
 
 // --- Types ---
 type Language = 'cn' | 'en';
@@ -1508,19 +1509,32 @@ export default function App() {
   const { scrollYProgress } = useScroll();
 
   useEffect(() => {
+    // 先用内置配置立即渲染，避免白屏
     setConfig(loadConfig());
 
-    const handleStorage = () => {
-      setConfig(loadConfig());
+    let alive = true;
+    const applyRemote = () => {
+      void fetchRemoteConfig().then((remote) => {
+        if (alive && remote) setConfig(remote);
+      });
     };
+
+    // 启动时拉取线上配置；页面重新可见时再拉一次，管理端发布后无需重新构建即可生效
+    applyRemote();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') applyRemote();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    const handleStorage = () => applyRemote();
     window.addEventListener('storage', handleStorage);
 
-    const handleConfigUpdate = () => {
-      setConfig(loadConfig());
-    };
+    const handleConfigUpdate = () => applyRemote();
     window.addEventListener('config-updated', handleConfigUpdate);
 
     return () => {
+      alive = false;
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('config-updated', handleConfigUpdate);
     };
