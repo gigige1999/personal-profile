@@ -190,7 +190,11 @@ export const defaultConfig: SiteConfig = {
         "/personal-profile/assets/extracted/image-840db330e18d.png",
         "/personal-profile/assets/extracted/image-9db9bfabcd03.png",
         "/personal-profile/assets/extracted/image-9f261b60dec4.png",
-        "/personal-profile/assets/extracted/image-b4b5dede88a1.png"
+        "/personal-profile/assets/extracted/image-b4b5dede88a1.png",
+        "/personal-profile/assets/extracted/image-06a631e7a1d0.png",
+        "/personal-profile/assets/extracted/image-1da02b1e9e3f.png",
+        "/personal-profile/assets/extracted/image-05b46796004b.png",
+        "/personal-profile/assets/extracted/image-30efe080cd2d.png"
       ],
       "gameplay": {
         "cn": "",
